@@ -182,16 +182,18 @@ class QADataset(Dataset):
         tokenizer: `Tokenizer` object.
         batch_size: Int. The number of example in a mini batch.
     """
-    def __init__(self, args, path, spy_name):
+    def __init__(self, args, path):
         self.args = args
+        self.nlp = spacy.load("en_core_web_sm")
+        self.spy_name = args.spy_type # 'tag' or 'dep'
         self.meta, self.elems = load_dataset(path)
         self.samples = self._create_samples()
         self.tokenizer = None
         self.batch_size = args.batch_size if 'batch_size' in args else 1
         self.pad_token_id = self.tokenizer.pad_token_id \
             if self.tokenizer is not None else 0
-        self.spy_name = spy_name # 'tag' or 'dep'
-        self.nlp = spacy.load("en_core_web_sm")
+        
+        
 
     def _create_samples(self):
         """
@@ -208,8 +210,8 @@ class QADataset(Dataset):
                 token.lower() for (token, offset) in elem['context_tokens']
             ][:self.args.max_context_length]
              # add tags to context
-            passage_doc =  self.nlp(elem['context_tokens'])
-            if spy_name == "tag":
+            passage_doc =  self.nlp(elem['context'])
+            if self.spy_name == "tag":
                 passage_spy_tokens = [token.tag_ for token in passage_doc][:self.args.max_context_length]
             else:
                 passage_spy_tokens = [token.dep_ for token in passage_doc][:self.args.max_context_length]
@@ -223,8 +225,8 @@ class QADataset(Dataset):
                 ][:self.args.max_question_length]
                 
                 # tag to question
-                question_doc =  self.nlp(elem['question_tokens'])
-                if spy_name == "tag":
+                question_doc =  self.nlp(qa['question'])
+                if self.spy_name == "tag":
                     question_spy_tokens = [token.tag_ for token in question_doc][:self.args.max_question_length]
                 else:
                     question_spy_tokens = [token.dep_ for token in question_doc][:self.args.max_question_length]
