@@ -170,6 +170,29 @@ parser.add_argument(
     default=300,
     help='embedding dimension',
 )
+
+parser.add_argument(
+    '--embedding_dim_spy',
+    type=int,
+    default=50,
+    help='embedding dimension for spy',
+)
+
+parser.add_argument(
+    '--vocab_size_spy',
+    type=int,
+    default=50,
+    help='Spacy tag/dep num (dynamically set, do not change!)',
+)
+
+parser.add_argument(
+    '--spy_type',
+    type=str,
+    default="dep",
+    help='dep or tag',
+)
+
+
 parser.add_argument(
     '--hidden_dim',
     type=int,
@@ -477,6 +500,12 @@ def main(args):
     print(f'train samples = {len(train_dataset)}')
     print(f'dev samples = {len(dev_dataset)}')
     print()
+
+    # set up vocab_size_spy based on spy_type 
+    if args.spy_type == "tag":
+       args.vocab_size_spy =  len(vocabulary.tag_list)
+    elif args.spy_type == "dep":
+        args.vocab_size_spy =  len(vocabulary.dep_list)
 
     # Select model.
     model = _select_model(args)
