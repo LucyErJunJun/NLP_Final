@@ -4,6 +4,8 @@ Author:
     Shrey Desai and Yasumasa Onoe
 """
 import spacy
+from spacy.tokens import Doc
+import time
 
 import collections
 import itertools
@@ -17,6 +19,7 @@ from utils import cuda, load_dataset
 PAD_TOKEN = '[PAD]'
 UNK_TOKEN = '[UNK]'
 
+spacy.prefer_gpu()
 
 class Vocabulary:
     """
@@ -77,7 +80,7 @@ class Vocabulary:
             (at position 0) and `UNK_TOKEN` (at position 1) are prepended.
         """
         vocab = collections.defaultdict(int)
-        for (_, passage, question, _, _) in samples:
+        for (_, passage, question, _, _, _, _) in samples:
             for token in itertools.chain(passage, question):
                 vocab[token.lower()] += 1
     
@@ -204,13 +207,19 @@ class QADataset(Dataset):
             A list of words (string).
         """
         samples = []
-        for elem in self.elems:
+        start =  time.time()
+        for i, elem in enumerate(self.elems):
             # Unpack the context paragraph. Shorten to max sequence length.
             passage = [
                 token.lower() for (token, offset) in elem['context_tokens']
             ][:self.args.max_context_length]
-             # add tags to context
-            passage_doc =  self.nlp(elem['context'])
+            # add tags to context
+            # passage_doc =  self.nlp(elem['context'])
+            def custom_tokenizer(text):
+                # with this:
+                return Doc(self.nlp.vocab, passage)
+            self.nlp.tokenizer = custom_tokenizer
+            passage_doc =  self.nlp(" ")
             if self.spy_name == "tag":
                 passage_spy_tokens = [token.tag_ for token in passage_doc][:self.args.max_context_length]
             else:
@@ -225,7 +234,12 @@ class QADataset(Dataset):
                 ][:self.args.max_question_length]
                 
                 # tag to question
-                question_doc =  self.nlp(qa['question'])
+                # question_doc =  self.nlp(qa['question'])
+                def custom_tokenizer(text):
+                    # with this:
+                    return Doc(self.nlp.vocab, question)
+                self.nlp.tokenizer = custom_tokenizer
+                question_doc =  self.nlp(" ")
                 if self.spy_name == "tag":
                     question_spy_tokens = [token.tag_ for token in question_doc][:self.args.max_question_length]
                 else:
@@ -236,10 +250,25 @@ class QADataset(Dataset):
                 # is inclusive.
                 answers = qa['detected_answers']
                 answer_start, answer_end = answers[0]['token_spans'][0]
+                '''if len(passage)!= len(passage_spy_tokens):
+                    print("passage spacy len diff! {} vs {}".format(len(passage), len(passage_spy_tokens)))
+                    print(passage)
+                    print(passage_spy_tokens)
+                    raise RuntimeError("Alert!")
+                if len(question)!= len(question_spy_tokens):
+                    print("question spacy len diff! {} vs {}".format(len(question), len(question_spy_tokens)))
+                    raise RuntimeError("Alert!")
+                '''
                 samples.append(
                     (qid, passage, question, answer_start, answer_end, 
                      passage_spy_tokens, question_spy_tokens)
                 )
+            
+            if i%10000 == 0: 
+                end = time.time()
+                print("sample {} takes {}".format(i, end - start))
+                # print(question_spy_tokens)
+                start = time.time()
                 
         return samples
 
@@ -367,6 +396,10 @@ class QADataset(Dataset):
             padded_questions_spy = torch.zeros(bsz, max_question_length)
             for iii, passage_question_spy in enumerate(zip(passages_spy, questions_spy)):
                 passage_spy, question_spy = passage_question_spy
+                if len(passage_spy) > max_passage_length:
+                    print("passage_spy: ", len(passage_spy))
+                    print("max_passage_length: ", max_passage_length)
+                    print(passage_spy)
                 padded_passages_spy[iii][:len(passage_spy)] = passage_spy
                 padded_questions_spy[iii][:len(question_spy)] = question_spy
 
