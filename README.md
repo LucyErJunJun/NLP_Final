@@ -1,5 +1,22 @@
 # NLP QA Final Project
 
+## How to Run
+Check CS388_FP.ipynb for how to run the improved version with dep or tag. Check CS388_FP_Origin.ipynb for the original version as a benchmark. Please run both scripts on Google Colab with GPU session to replicate the same results.
+
+## Results
+By adding Spacy detection on the tag/dep of the input context and questions, and concatenating the embeddings from spacy with the glove embeddings, we compared the result with the base model.
+| Model                        | Hidden Dim | Parameters | SQuAD Dev EM/F1 | Train & Test Time |     Output File    |
+|------------------------------|:----------:|:----------:|:---------------:|:-----------------:|:------------------:|
+| original |     128    |  16M  |   47.21/59.81   |       9m 47s      |       [NA]
+|------------------------------|:----------:|:----------:|:---------------:|:-----------------:|:------------------:|
+| original |     300    |       |   48.90/61.33   |             |       [NA]
+|------------------------------|:----------:|:----------:|:---------------:|:-----------------:|:------------------:|
+| Spacy token.tag_ |     300    |       |   51.67/64.35   |             |       [NA]
+|------------------------------|:----------:|:----------:|:---------------:|:-----------------:|:------------------:|
+| Spacy token.dep_ |     300    |       |   50.76/63.4   |             |       [NA]
+
+
+## Original Project Discription
 This repository contains starter code for the Natural Language Processing final project on question answering. For specific details on deliverables and deadlines, please refer to the final project spec posted on the course website.
 
 Authors: Shrey Desai, Yasumasa Onoe, and Greg Durrett
