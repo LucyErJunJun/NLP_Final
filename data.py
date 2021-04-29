@@ -185,9 +185,9 @@ class QADataset(Dataset):
         tokenizer: `Tokenizer` object.
         batch_size: Int. The number of example in a mini batch.
     """
-    def __init__(self, args, path):
+    def __init__(self, args, path, spy_model_type):
         self.args = args
-        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp = spacy.load(spy_model_type)
         self.spy_name = args.spy_type # 'tag' or 'dep'
         self.meta, self.elems = load_dataset(path)
         self.samples = self._create_samples()
@@ -208,6 +208,7 @@ class QADataset(Dataset):
         """
         samples = []
         start =  time.time()
+        start_all_sample = time.time()
         for i, elem in enumerate(self.elems):
             # Unpack the context paragraph. Shorten to max sequence length.
             passage = [
@@ -264,12 +265,14 @@ class QADataset(Dataset):
                      passage_spy_tokens, question_spy_tokens)
                 )
             
-            if i%10000 == 0: 
+            if i%1000 == 0: 
                 end = time.time()
                 print("sample {} takes {}".format(i, end - start))
                 # print(question_spy_tokens)
                 start = time.time()
-                
+
+        end_all_sample = time.time()
+        print("total sample {} takes {}".format(i, end_all_sample - start_all_sample))       
         return samples
 
     def _create_data_generator(self, shuffle_examples=False):
