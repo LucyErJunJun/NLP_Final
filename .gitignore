@@ -5,3 +5,4 @@ glove/
 venv/
 *.pt
 *.jsonl.gz
+Untitled.ipynb
