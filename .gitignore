@@ -6,3 +6,4 @@ venv/
 *.pt
 *.jsonl.gz
 Untitled.ipynb
+.ipynb_checkpoints
